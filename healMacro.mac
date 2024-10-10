@@ -1,0 +1,84 @@
+| healy.mac
+| Purpose: Keep tank alive during combat with a healing party member.
+| Date: 2/15/2024
+| Authors: Sean Hyde, Adam Brucker
+
+| Healing tank macro
+| Main
+Sub Main
+    /echo starting healing macro
+    /echo setting memspells
+
+    | Dont want to set these every time we loop, it would sit them down every time
+    /memspell 1 "Minor Healing"
+    /memspell 2 Strengthen
+
+    | Forever loop for checking tank HP and tank buffs
+    while (TRUE){
+
+        | Check Tanks HP (Checks tanks HP and heals if below 60%)
+        /call checkTankHP
+
+        | Check Tanks Buffs 
+        /call checkTankBuff
+
+        /call checkHealerStats
+
+
+        | Delay loop to make sure game doesnt break
+        /delay 1
+}
+
+    Sub checkTankHP{
+        /echo checking tank HP
+
+        for i 1 to ${Group.GroupSize} { 
+        | Check if tanks HP is below 60%
+            /if (${Group.Member[${i}].PctHPs} < 60) {
+            /echo tank HP is below 60%
+            /echo casting heal on tank
+            /call healTank
+            }
+        }
+    }
+
+    Sub healTank{
+        /echo healing tank
+        
+        | Target the tank
+	    for i 1 to ${Group.GroupSize} {
+            /target ${Group.Member[${i}].CleanName}
+
+            | Cast healing spell
+            /cast "Minor Healing"
+        }
+
+    /return
+    }
+
+    Sub checkTankBuff{
+        | Check and buff missing beneficial stat buffs
+        /if (!${Target.Buff[Strengthen].ID})  /cast Strengthen
+
+        /return
+    }
+
+    Sub checkHealerStats{
+        /echo healing and regen mana for healer
+        
+        |If this is true we want to sit the healer down and regen health and mana
+        /if (${Me.PctHPs} < 20 || ${Me.PctMana} < 20){
+            /while (${Me.PctHPs}<100 || ${Me.PctMana}<100) {
+                /if (${Me.Standing}) {
+                /echo Sitting because I am standing.
+                /sit
+                }
+                /echo Resting until my hitpoints (${Me.PctHPs}%) and mana (${Me.PctMana}%) are at 100%.
+                /delay 6s
+            }
+        } 
+        /return
+    }
+
+
+    
